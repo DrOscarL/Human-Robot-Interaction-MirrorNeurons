@@ -1,4 +1,4 @@
-# Avatar 2D · Neuronas Espejo — versión web corregida
+# Avatar 2D · Neuronas Espejo — versión web
 
 Aplicación web estática para GitHub Pages que:
 
