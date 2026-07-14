@@ -1,0 +1,1640 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mirror Neuron Avatar — Facial Expression CDT</title>
+
+  <!-- MediaPipe Face Mesh -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    onload="renderMathInElement(document.body,{delimiters:[{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}]})"></script>
+
+  <style>
+/* ═══════════════════════════════════════════════
+   Mirror Neuron Avatar — Design System
+   Palette: deep void + cyan bioluminescence + magenta spike
+   ═══════════════════════════════════════════════ */
+
+:root {
+  --bg0:      #070b12;
+  --bg1:      #0d1521;
+  --bg2:      #111d2e;
+  --bg3:      #162336;
+  --border:   #1e3048;
+  --border2:  #254060;
+
+  --cyan:     #00e5ff;
+  --cyan-dim: #0099bb;
+  --magenta:  #ff6b9d;
+  --green:    #39ff85;
+  --amber:    #ffb830;
+  --text:     #cde4f5;
+  --text-dim: #5a7a99;
+  --text-faint:#2a4a66;
+
+  --panel-r:  8px;
+  --hdr-h:    60px;
+  --kbd-h:    36px;
+  --font-mono: 'JetBrains Mono', 'Fira Mono', 'Consolas', monospace;
+  --font-ui:   'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: var(--bg0);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  overflow-x: hidden;
+}
+
+/* ── HEADER ─────────────────────────────────── */
+header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: var(--hdr-h);
+  background: var(--bg1);
+  border-bottom: 1px solid var(--border);
+  z-index: 100;
+  backdrop-filter: blur(8px);
+}
+.header-inner {
+  max-width: 1600px;
+  margin: 0 auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 20px;
+}
+.logo-block {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.logo-icon {
+  font-size: 22px;
+  color: var(--cyan);
+  line-height: 1;
+  filter: drop-shadow(0 0 6px var(--cyan));
+}
+.logo-title {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--text);
+}
+.logo-sub {
+  font-size: 10px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+/* ── TAB NAV ─────────────────────────────────── */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  margin: 0 auto;
+}
+.tab-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 6px 18px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 0.15s;
+}
+.tab-btn:hover { border-color: var(--cyan-dim); color: var(--text); }
+.tab-btn.active {
+  background: rgba(0,229,255,0.1);
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+.tab-icon { font-size: 14px; }
+
+/* ── STATUS PILL ─────────────────────────────── */
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.status-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition: background 0.3s;
+}
+.status-dot.live { background: var(--green); box-shadow: 0 0 6px var(--green); animation: pulse 2s infinite; }
+.status-dot.error { background: var(--magenta); }
+
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+/* ── TAB CONTENT ─────────────────────────────── */
+.tab-content {
+  display: none;
+  padding-top: calc(var(--hdr-h) + 16px);
+  padding-bottom: calc(var(--kbd-h) + 16px);
+  padding-left: 16px;
+  padding-right: 16px;
+  max-width: 1600px;
+  margin: 0 auto;
+  min-height: 100vh;
+}
+.tab-content.active { display: block; }
+
+/* ── PANELS ──────────────────────────────────── */
+.panel {
+  background: var(--bg1);
+  border: 1px solid var(--border);
+  border-radius: var(--panel-r);
+  padding: 16px;
+  position: relative;
+}
+.panel-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  color: var(--cyan-dim);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* ── INTERACTION GRID ────────────────────────── */
+.interaction-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 14px;
+}
+.camera-panel { grid-column: 1; grid-row: 1; }
+.avatar-panel  { grid-column: 2; grid-row: 1; }
+.vector-panel  { grid-column: 1 / 3; grid-row: 2; }
+
+/* ── CAMERA ──────────────────────────────────── */
+.camera-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4/3;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+#inputVideo {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+#overlayCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  transform: scaleX(-1);
+}
+.camera-badge {
+  position: absolute;
+  top: 8px; left: 8px;
+  background: rgba(255,0,60,0.85);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 3px;
+  letter-spacing: 0.1em;
+}
+.camera-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── AVATAR ──────────────────────────────────── */
+#avatarCanvas {
+  width: 100%;
+  aspect-ratio: 4/3;
+  display: block;
+  border-radius: 4px;
+  background: var(--bg0);
+}
+.avatar-info {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.info-chip {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 12px;
+  flex: 1;
+  min-width: 100px;
+}
+.chip-label {
+  display: block;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+}
+.chip-value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 16px;
+  color: var(--cyan);
+}
+#learningChip.on .chip-value { color: var(--green); }
+
+/* ── VECTOR BARS ─────────────────────────────── */
+.vector-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+}
+.vec-block {}
+.vec-label {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.vec-block canvas { width: 100%; display: block; }
+
+/* ── CONTROLS ────────────────────────────────── */
+.ctrl-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 7px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.ctrl-btn:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+  background: rgba(0,229,255,0.07);
+}
+.ctrl-btn.learning-on {
+  border-color: var(--green);
+  color: var(--green);
+  background: rgba(57,255,133,0.08);
+  box-shadow: 0 0 8px rgba(57,255,133,0.2);
+}
+
+/* ── MATH GRID ───────────────────────────────── */
+.math-grid {
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  grid-template-rows: auto auto;
+  gap: 14px;
+}
+.eq-panel     { grid-column: 1; grid-row: 1 / 3; }
+.chart-panel  { grid-column: 2; grid-row: 1; }
+.heatmap-panel{ grid-column: 1; grid-row: 3; }
+.error-panel  { grid-column: 2; grid-row: 2; }
+
+/* ── EQUATIONS ───────────────────────────────── */
+.equations { margin-bottom: 20px; }
+.eq-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.eq-row:last-child { border-bottom: none; }
+.eq-num {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(0,229,255,0.1);
+  border: 1px solid var(--cyan-dim);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+.eq-body { flex: 1; }
+.eq-math {
+  color: var(--text);
+  font-size: 14px;
+  overflow-x: auto;
+}
+.eq-desc {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  font-family: var(--font-mono);
+}
+
+/* ── PARAM SLIDERS ───────────────────────────── */
+.param-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.param-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.param-row label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+}
+.param-row label span { color: var(--cyan); }
+input[type=range] {
+  width: 100%;
+  accent-color: var(--cyan);
+  height: 4px;
+  cursor: pointer;
+}
+.math-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── CHARTS ──────────────────────────────────── */
+.chart-panel canvas, .error-panel canvas {
+  max-height: 220px;
+  width: 100% !important;
+}
+
+/* ── HEATMAP ─────────────────────────────────── */
+#heatmapCanvas {
+  width: 100%;
+  display: block;
+  image-rendering: pixelated;
+  border-radius: 4px;
+}
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+.legend-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #00e5ff, #070b12, #ff6b9d);
+}
+
+/* ── KBD BAR ─────────────────────────────────── */
+.kbd-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: var(--kbd-h);
+  background: var(--bg1);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  z-index: 100;
+}
+kbd {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--cyan);
+}
+
+/* ── KATEX OVERRIDE ──────────────────────────── */
+.katex { color: var(--text); font-size: 1em; }
+.katex-display { margin: 4px 0; overflow-x: auto; }
+
+/* ── SCROLLBAR ───────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg0); }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* ── RESPONSIVE ──────────────────────────────── */
+@media (max-width: 900px) {
+  .interaction-grid { grid-template-columns: 1fr; }
+  .camera-panel, .avatar-panel { grid-column: 1; }
+  .avatar-panel { grid-row: 2; }
+  .vector-panel { grid-column: 1; grid-row: 3; }
+  .vector-grid { grid-template-columns: 1fr; }
+  .math-grid { grid-template-columns: 1fr; }
+  .eq-panel, .chart-panel, .heatmap-panel, .error-panel {
+    grid-column: 1; grid-row: auto;
+  }
+}
+
+  </style>
+</head>
+<body>
+
+
+<!-- ═══════════════════════════════════════════════════════ HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="logo-block">
+      <span class="logo-icon">◈</span>
+      <div>
+        <div class="logo-title">Mirror Neuron Avatar</div>
+        <div class="logo-sub">Cognitive Digital Twin · CHARM Lab</div>
+      </div>
+    </div>
+    <nav class="tab-nav">
+      <button class="tab-btn active" data-tab="interaction" onclick="switchTab('interaction')">
+        <span class="tab-icon">⬡</span> Interacción
+      </button>
+      <button class="tab-btn" data-tab="math" onclick="switchTab('math')">
+        <span class="tab-icon">∑</span> Modelo Matemático
+      </button>
+    </nav>
+    <div class="status-pill" id="statusPill">
+      <span class="status-dot" id="statusDot"></span>
+      <span id="statusText">Iniciando…</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════ TAB: INTERACTION -->
+<main id="tab-interaction" class="tab-content active">
+  <div class="interaction-grid">
+
+    <!-- Camera feed -->
+    <section class="panel camera-panel">
+      <div class="panel-label">Entrada · Cámara — Expresión Facial</div>
+      <div class="camera-wrapper">
+        <video id="inputVideo" autoplay muted playsinline></video>
+        <canvas id="overlayCanvas"></canvas>
+        <div class="camera-badge" id="cameraBadge">● LIVE</div>
+      </div>
+      <div class="camera-controls">
+        <button class="ctrl-btn" onclick="cycleCamera()" title="Cambiar cámara (C)">⇄ Cámara</button>
+        <button class="ctrl-btn" id="btnLearn" onclick="toggleLearning()" title="Aprendizaje (L)">◉ Aprender</button>
+        <button class="ctrl-btn" onclick="perturbMatrix()" title="Perturbar W (P)">⚡ Perturbar</button>
+        <button class="ctrl-btn" onclick="resetModel()" title="Reiniciar (R)">↺ Reiniciar</button>
+      </div>
+    </section>
+
+    <!-- Avatar -->
+    <section class="panel avatar-panel">
+      <div class="panel-label">Salida · Avatar</div>
+      <canvas id="avatarCanvas"></canvas>
+      <div class="avatar-info">
+        <div class="info-chip">
+          <span class="chip-label">Error ‖e‖</span>
+          <span class="chip-value" id="errorNorm">0.000</span>
+        </div>
+        <div class="info-chip">
+          <span class="chip-label">Frames detectados</span>
+          <span class="chip-value" id="gestureCount">0</span>
+        </div>
+        <div class="info-chip" id="learningChip">
+          <span class="chip-label">Aprendizaje</span>
+          <span class="chip-value" id="learningStatus">OFF</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- State vectors -->
+    <section class="panel vector-panel">
+      <div class="panel-label">Vectores de estado</div>
+      <div class="vector-grid">
+        <div class="vec-block">
+          <div class="vec-label">x[k] — expresión facial x[k]</div>
+          <canvas id="vecX" height="60"></canvas>
+        </div>
+        <div class="vec-block">
+          <div class="vec-label">m[k] — estado espejo</div>
+          <canvas id="vecM" height="60"></canvas>
+        </div>
+        <div class="vec-block">
+          <div class="vec-label">q[k] — salida motora</div>
+          <canvas id="vecQ" height="60"></canvas>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</main>
+
+<!-- ═══════════════════════════════════════════════════════ TAB: MATH -->
+<main id="tab-math" class="tab-content">
+  <div class="math-grid">
+
+    <!-- Equations -->
+    <section class="panel eq-panel">
+      <div class="panel-label">Modelo · Neuronas Espejo</div>
+      <div class="equations">
+        <div class="eq-row">
+          <span class="eq-num">1</span>
+          <div class="eq-body">
+            <div class="eq-math">\[ z[k] = \phi\!\left(W_{SM}\,x[k] + b\right) \]</div>
+            <div class="eq-desc">Activación instantánea de la capa espejo</div>
+          </div>
+        </div>
+        <div class="eq-row">
+          <span class="eq-num">2</span>
+          <div class="eq-body">
+            <div class="eq-math">\[ m[k{+}1] = (1-\alpha)\,m[k] + \alpha\,z[k] \]</div>
+            <div class="eq-desc">Dinámica de la población espejo (filtro IIR)</div>
+          </div>
+        </div>
+        <div class="eq-row">
+          <span class="eq-num">3</span>
+          <div class="eq-body">
+            <div class="eq-math">\[ q[k] = K\,m[k] \]</div>
+            <div class="eq-desc">Proyección a espacio motor</div>
+          </div>
+        </div>
+        <div class="eq-row">
+          <span class="eq-num">4</span>
+          <div class="eq-body">
+            <div class="eq-math">\[ \Delta W = \eta\,(m^*-m)\,x^\top \]</div>
+            <div class="eq-desc">Regla de aprendizaje Hebbiano (online)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="param-grid">
+        <div class="param-row">
+          <label>α (actualización) <span id="alphaVal">0.10</span></label>
+          <input type="range" id="alphaSlider" min="0.01" max="0.5" step="0.01" value="0.10"
+            oninput="updateParam('alpha', this.value)">
+        </div>
+        <div class="param-row">
+          <label>η (aprendizaje) <span id="etaVal">0.01</span></label>
+          <input type="range" id="etaSlider" min="0.001" max="0.1" step="0.001" value="0.01"
+            oninput="updateParam('eta', this.value)">
+        </div>
+      </div>
+
+      <div class="math-controls">
+        <button class="ctrl-btn active" onclick="toggleLearning()">◉ Aprendizaje</button>
+        <button class="ctrl-btn" onclick="perturbMatrix()">⚡ Perturbar W</button>
+        <button class="ctrl-btn" onclick="resetModel()">↺ Reiniciar</button>
+      </div>
+    </section>
+
+    <!-- Time series chart -->
+    <section class="panel chart-panel">
+      <div class="panel-label">Evolución temporal</div>
+      <canvas id="timeChart"></canvas>
+    </section>
+
+    <!-- W_SM heatmap -->
+    <section class="panel heatmap-panel">
+      <div class="panel-label">Matriz W<sub>SM</sub> — mapa de calor</div>
+      <canvas id="heatmapCanvas"></canvas>
+      <div class="heatmap-legend">
+        <span style="color:#00e5ff">−</span>
+        <div class="legend-bar"></div>
+        <span style="color:#ff6b9d">+</span>
+      </div>
+    </section>
+
+    <!-- Error chart -->
+    <section class="panel error-panel">
+      <div class="panel-label">Norma del error de imitación ‖m* − m‖</div>
+      <canvas id="errorChart"></canvas>
+    </section>
+
+  </div>
+</main>
+
+<!-- ═══════════════════════════════════════════════════════ KEYBOARD HINTS -->
+<div class="kbd-bar">
+  <kbd>TAB</kbd> pestañas &nbsp;·&nbsp;
+  <kbd>L</kbd> aprender &nbsp;·&nbsp;
+  <kbd>P</kbd> perturbar &nbsp;·&nbsp;
+  <kbd>R</kbd> reiniciar &nbsp;·&nbsp;
+  <kbd>C</kbd> cámara
+</div>
+
+
+
+<script>
+// model.js — Mirror Neuron Facial Model
+
+/**
+ * model.js — Mirror Neuron Model for FACIAL EXPRESSIONS
+ *
+ * x[k] ∈ ℝ¹²  — 12 features extraídas de Face Mesh (AU-like)
+ *   0: apertura boca (vertical)
+ *   1: ancho boca (horizontal)  
+ *   2: ceja izq elevación
+ *   3: ceja der elevación
+ *   4: ojo izq apertura
+ *   5: ojo der apertura
+ *   6: mejilla izq (sonrisa)
+ *   7: mejilla der (sonrisa)
+ *   8: inclinación cabeza
+ *   9: rotación cabeza (yaw)
+ *   10: nariz arrugar (distancia puente)
+ *   11: frente tensión
+ *
+ * z[k] ∈ ℝ²⁴  — capa espejo
+ * m[k] ∈ ℝ²⁴  — estado dinámico espejo
+ * q[k] ∈ ℝ¹²  — salida motora → avatar
+ */
+
+const INPUT_DIM  = 12;
+const MIRROR_DIM = 24;
+const MOTOR_DIM  = 12;
+
+class MirrorNeuronModel {
+  constructor() {
+    this.alpha = 0.15;
+    this.eta   = 0.01;
+    this.W_SM  = this._randMatrix(MIRROR_DIM, INPUT_DIM, 0.3);
+    this.b     = new Float32Array(MIRROR_DIM).fill(0);
+    this.K     = this._randMatrix(MOTOR_DIM, MIRROR_DIM, 0.2);
+    this.x     = new Float32Array(INPUT_DIM);
+    this.z     = new Float32Array(MIRROR_DIM);
+    this.m     = new Float32Array(MIRROR_DIM);
+    this.q     = new Float32Array(MOTOR_DIM);
+    this.mStar = new Float32Array(MIRROR_DIM).fill(0.5);
+    this.learning    = false;
+    this.stepCount   = 0;
+    this.errorHistory = [];
+    this.MAX_HISTORY  = 200;
+  }
+
+  _phi(v) {
+    const out = new Float32Array(v.length);
+    for (let i = 0; i < v.length; i++)
+      out[i] = v[i] > 0 ? v[i] : 0.01 * v[i];
+    return out;
+  }
+
+  _matvec(M, rows, cols, v) {
+    const out = new Float32Array(rows);
+    for (let i = 0; i < rows; i++) {
+      let s = 0;
+      for (let j = 0; j < cols; j++) s += M[i*cols+j] * v[j];
+      out[i] = s;
+    }
+    return out;
+  }
+
+  _randMatrix(rows, cols, scale) {
+    const M = new Float32Array(rows * cols);
+    for (let i = 0; i < M.length; i++)
+      M[i] = (Math.random()*2-1) * scale;
+    return M;
+  }
+
+  step(faceLM) {
+    this.x = this._extractFeatures(faceLM);
+
+    // z[k] = φ(W_SM · x + b)
+    const Wx = this._matvec(this.W_SM, MIRROR_DIM, INPUT_DIM, this.x);
+    this.z = this._phi(Wx.map((v,i) => v + this.b[i]));
+
+    // m[k+1] = (1-α)m + α·z
+    const a = this.alpha;
+    this.m = this.m.map((v,i) => (1-a)*v + a*this.z[i]);
+
+    // q[k] = K · m
+    this.q = this._matvec(this.K, MOTOR_DIM, MIRROR_DIM, this.m);
+
+    // Hebbian update
+    if (this.learning) {
+      const err = this.mStar.map((v,i) => v - this.m[i]);
+      for (let i = 0; i < MIRROR_DIM; i++)
+        for (let j = 0; j < INPUT_DIM; j++)
+          this.W_SM[i*INPUT_DIM+j] += this.eta * err[i] * this.x[j];
+      this.W_SM = this.W_SM.map(v => Math.max(-2, Math.min(2, v)));
+    }
+
+    const errVec  = this.mStar.map((v,i) => v - this.m[i]);
+    const errNorm = Math.sqrt(errVec.reduce((s,v) => s+v*v, 0));
+    this.errorHistory.push(errNorm);
+    if (this.errorHistory.length > this.MAX_HISTORY) this.errorHistory.shift();
+    this.stepCount++;
+    return { x: this.x, z: this.z, m: this.m, q: this.q, errNorm };
+  }
+
+  // ── Face Mesh landmark indices (MediaPipe 468) ──────────────
+  // Boca: 13(top), 14(bottom), 61(left), 291(right)
+  // Ojos: 159/145 izq, 386/374 der
+  // Cejas: 70,63 izq | 300,293 der
+  // Mejillas: 116 izq, 345 der
+  // Nariz puente: 168
+  // Frente: 10
+  _extractFeatures(lm) {
+    if (!lm || lm.length < 400) {
+      return this.x.map(v => v * 0.85); // suave decay
+    }
+    const p = lm; // array de {x,y,z}
+
+    // Distancia normalizada entre dos landmarks
+    const dist = (a, b) => Math.hypot(p[a].x-p[b].x, p[a].y-p[b].y);
+    const dy   = (a, b) => p[b].y - p[a].y; // positivo hacia abajo
+    const dx   = (a, b) => p[b].x - p[a].x;
+
+    // Normalización: distancia interocular como referencia
+    const faceScale = dist(33, 263) || 0.3;
+    const norm = v => Math.min(1, Math.max(0, v / faceScale));
+
+    // 0: apertura boca vertical (13→14)
+    const mouthOpen = norm(dist(13, 14)) * 5;
+    // 1: ancho boca (61→291)  
+    const mouthWide = norm(dist(61, 291));
+    // 2: ceja izq elevación (159→70) — ceja sube = valor alto
+    const browL = Math.min(1, Math.max(0, 0.5 - dy(70,159)/faceScale * 3));
+    // 3: ceja der elevación (386→300)
+    const browR = Math.min(1, Math.max(0, 0.5 - dy(300,386)/faceScale * 3));
+    // 4: ojo izq apertura (159→145)
+    const eyeL = norm(dist(159, 145)) * 6;
+    // 5: ojo der apertura (386→374)
+    const eyeR = norm(dist(386, 374)) * 6;
+    // 6: mejilla izq — comisura boca sube al sonreír (61 vs 291)
+    const smileL = Math.min(1, Math.max(0, 0.5 - dy(234,61)/faceScale * 2));
+    // 7: mejilla der
+    const smileR = Math.min(1, Math.max(0, 0.5 - dy(454,291)/faceScale * 2));
+    // 8: inclinación cabeza (33→263 vs horizontal)
+    const tilt = Math.min(1, Math.max(0, 0.5 + Math.atan2(dy(33,263), dx(33,263)) * 1.5));
+    // 9: yaw — asimetría nariz respecto al centro (1 vs punto medio ojos)
+    const noseCx = p[1].x - (p[33].x + p[263].x)/2;
+    const yaw = Math.min(1, Math.max(0, 0.5 + noseCx / faceScale * 2));
+    // 10: arrugar nariz (distancia puente 168 vs ojos)
+    const noseWrinkle = norm(dist(168, 6)) * 3;
+    // 11: tensión frente (dist frente 10 a puente nariz 168)
+    const foreheadTension = norm(dist(10, 168));
+
+    return new Float32Array([
+      mouthOpen, mouthWide,
+      browL, browR,
+      eyeL, eyeR,
+      smileL, smileR,
+      tilt, yaw,
+      noseWrinkle, foreheadTension
+    ]);
+  }
+
+  perturb(scale=0.5) {
+    for (let i=0; i<this.W_SM.length; i++)
+      this.W_SM[i] += (Math.random()*2-1)*scale;
+    this.W_SM = this.W_SM.map(v => Math.max(-2,Math.min(2,v)));
+  }
+
+  reset() {
+    this.W_SM  = this._randMatrix(MIRROR_DIM, INPUT_DIM, 0.3);
+    this.b     = new Float32Array(MIRROR_DIM).fill(0);
+    this.K     = this._randMatrix(MOTOR_DIM, MIRROR_DIM, 0.2);
+    this.x     = new Float32Array(INPUT_DIM);
+    this.z     = new Float32Array(MIRROR_DIM);
+    this.m     = new Float32Array(MIRROR_DIM);
+    this.q     = new Float32Array(MOTOR_DIM);
+    this.learning = false;
+    this.stepCount = 0;
+    this.errorHistory = [];
+  }
+
+  toggleLearning() { this.learning = !this.learning; return this.learning; }
+  setParam(n,v) {
+    if(n==='alpha') this.alpha=parseFloat(v);
+    if(n==='eta')   this.eta=parseFloat(v);
+  }
+}
+
+const model = new MirrorNeuronModel();
+
+</script>
+<script>
+// avatar.js — Faithful recreation of the original Python/Pygame avatar
+class AvatarRenderer {
+  constructor(canvasId) {
+    this.canvas = document.getElementById(canvasId);
+    this.ctx    = this.canvas.getContext('2d');
+    this.t      = 0;
+    this._resize();
+    window.addEventListener('resize', () => this._resize());
+  }
+
+  _resize() {
+    const rect = this.canvas.getBoundingClientRect();
+    this.canvas.width  = rect.width  || 400;
+    this.canvas.height = rect.height || 400;
+  }
+
+  _n(v) { return Math.min(1, Math.max(0, (v + 1) / 2)); }
+
+  draw(q) {
+    this.t += 0.016;
+    const ctx = this.ctx;
+    const W = this.canvas.width;
+    const H = this.canvas.height;
+
+    const mouthOpen = this._n(q[0]);
+    const smile     = this._n(q[1]);
+    const browL     = this._n(q[2]);  // 0=fruncida, 1=levantada
+    const browR     = this._n(q[3]);
+    const eyeL      = this._n(q[4]);  // 0=cerrado, 1=abierto
+    const eyeR      = this._n(q[5]);
+    const tilt      = (this._n(q[8]) - 0.5) * 0.3;
+    const yaw       = (this._n(q[9]) - 0.5) * 0.15;
+
+    // Background
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, W, H);
+
+    const cx = W / 2 + yaw * W * 0.05;
+    const cy = H * 0.43;
+    const S  = Math.min(W, H) * 0.34;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(tilt);
+
+    this._drawBase(ctx, S);
+    this._drawNeck(ctx, S);
+    this._drawHead(ctx, S);
+    this._drawForeheadTriangle(ctx, S);
+    this._drawJaw(ctx, S, mouthOpen, smile);
+    this._drawNose(ctx, S);
+    this._drawEyebrows(ctx, S, browL, browR);
+    this._drawEyes(ctx, S, eyeL, eyeR);
+
+    // Learning aura
+    if (model && model.learning) {
+      const pulse = 0.5 + 0.5 * Math.sin(this.t * 5);
+      ctx.strokeStyle = `rgba(57,255,133,${pulse * 0.5})`;
+      ctx.lineWidth = 2.5;
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.ellipse(0, -S * 0.05, S * 0.88, S * 1.08, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.restore();
+    this._drawBars(ctx, W, H, q);
+  }
+
+  // ── Hexagonal base / pedestal ─────────────────
+  _drawBase(ctx, S) {
+    // Platform
+    ctx.fillStyle = '#6a7a8a';
+    ctx.strokeStyle = '#4a5a6a';
+    ctx.lineWidth = 1.5;
+    const bw = S * 0.7, bh = S * 0.18, by = S * 1.02;
+    ctx.beginPath();
+    ctx.moveTo(-bw*0.6, by);
+    ctx.lineTo(-bw*0.5, by + bh);
+    ctx.lineTo( bw*0.5, by + bh);
+    ctx.lineTo( bw*0.6, by);
+    ctx.closePath();
+    ctx.fill(); ctx.stroke();
+
+    // Neck column
+    const nw = S * 0.22, nh = S * 0.22, ny = S * 0.82;
+    const ng = ctx.createLinearGradient(-nw/2, ny, nw/2, ny+nh);
+    ng.addColorStop(0, '#7a8a9a');
+    ng.addColorStop(1, '#5a6a7a');
+    ctx.fillStyle = ng;
+    ctx.strokeStyle = '#4a5a6a'; ctx.lineWidth = 1.5;
+    ctx.fillRect(-nw/2, ny, nw, nh);
+    ctx.strokeRect(-nw/2, ny, nw, nh);
+  }
+
+  // ── Neck (short, between head and base) ──────
+  _drawNeck(ctx, S) {
+    // Already handled in base
+  }
+
+  // ── Main head — white oval ────────────────────
+  _drawHead(ctx, S) {
+    const ctx2 = ctx;
+    // Drop shadow
+    ctx2.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx2.shadowBlur  = 20;
+    ctx2.shadowOffsetY = 8;
+
+    // Main oval — white/light grey gradient
+    const g = ctx2.createRadialGradient(-S*0.15, -S*0.2, 0, 0, 0, S*1.0);
+    g.addColorStop(0,   '#f0f4f8');
+    g.addColorStop(0.5, '#d8e4ee');
+    g.addColorStop(1,   '#a8bece');
+    ctx2.fillStyle = g;
+    ctx2.beginPath();
+    ctx2.ellipse(0, -S*0.05, S*0.78, S*0.98, 0, 0, Math.PI*2);
+    ctx2.fill();
+    ctx2.shadowBlur = 0; ctx2.shadowOffsetY = 0;
+
+    // Outline
+    ctx2.strokeStyle = '#8aa0b4';
+    ctx2.lineWidth = 2;
+    ctx2.beginPath();
+    ctx2.ellipse(0, -S*0.05, S*0.78, S*0.98, 0, 0, Math.PI*2);
+    ctx2.stroke();
+  }
+
+  // ── Forehead triangle (like in the photo) ─────
+  _drawForeheadTriangle(ctx, S) {
+    // Triangle outline on upper forehead
+    const tx = S * 0.3, ty1 = -S*0.82, ty2 = -S*0.45;
+    ctx.strokeStyle = 'rgba(100,130,160,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, ty1);          // apex
+    ctx.lineTo( tx, ty2);        // right
+    ctx.lineTo(-tx, ty2);        // left
+    ctx.closePath();
+    ctx.stroke();
+
+    // Center vertical line from apex down
+    ctx.beginPath();
+    ctx.moveTo(0, ty1);
+    ctx.lineTo(0, ty2 + S*0.06);
+    ctx.stroke();
+
+    // Small dots at triangle corners (screws)
+    [[0, ty1], [tx, ty2], [-tx, ty2]].forEach(([x,y]) => {
+      ctx.fillStyle = '#6a8090';
+      ctx.beginPath(); ctx.arc(x, y, S*0.022, 0, Math.PI*2); ctx.fill();
+    });
+  }
+
+  // ── Lower jaw — grey separate piece ──────────
+  _drawJaw(ctx, S, open, smile) {
+    const jawY   = S * 0.28;   // where jaw begins
+    const drop   = open * S * 0.22;
+    const jawH   = S * 0.42;
+    const jawW   = S * 0.68;
+
+    // Upper lip line (fixed)
+    const upperLipY = jawY;
+
+    // Jaw body — grey oval segment, drops down
+    const jy = jawY + drop;
+    const jg = ctx.createRadialGradient(-S*0.1, jy, 0, 0, jy + jawH*0.3, jawW);
+    jg.addColorStop(0, '#c0cdd8');
+    jg.addColorStop(0.6, '#9aacbc');
+    jg.addColorStop(1,   '#7a8e9e');
+    ctx.fillStyle = jg;
+    ctx.strokeStyle = '#7a8e9e'; ctx.lineWidth = 1.5;
+
+    // Jaw shape — lower half oval
+    ctx.beginPath();
+    ctx.ellipse(0, jy + jawH*0.22, jawW*0.75, jawH*0.68, 0, 0, Math.PI);
+    ctx.fill(); ctx.stroke();
+
+    // Seam line where jaw meets face (upper edge)
+    ctx.strokeStyle = 'rgba(80,100,120,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(0, jawY, jawW*0.75, jawH*0.15, 0, Math.PI, 0);
+    ctx.stroke();
+
+    // Smile crease lines at jaw corners
+    if (smile > 0.4) {
+      const si = (smile - 0.4) / 0.6;
+      ctx.strokeStyle = `rgba(60,80,100,${si * 0.5})`;
+      ctx.lineWidth = 1.5;
+      [-1,1].forEach(s => {
+        ctx.beginPath();
+        ctx.moveTo(s * jawW*0.72, jy + S*0.04);
+        ctx.quadraticCurveTo(s * jawW*0.85, jy + S*0.18, s * jawW*0.7, jy + S*0.32);
+        ctx.stroke();
+      });
+    }
+
+    // Small side screws on jaw
+    [-1,1].forEach(s => {
+      ctx.fillStyle = '#8a9aaa';
+      ctx.strokeStyle = '#6a7a8a'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(s*jawW*0.6, jy + S*0.08, S*0.025, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+    });
+
+    // ── Nose triangle (on jaw panel) ─────────────
+    const nx = S*0.14, nty = jy - S*0.01;
+    ctx.strokeStyle = 'rgba(80,110,140,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, nty - S*0.04);       // apex
+    ctx.lineTo( nx*0.7, nty + S*0.12); // right
+    ctx.lineTo(-nx*0.7, nty + S*0.12); // left
+    ctx.closePath(); ctx.stroke();
+
+    // ── Mouth opening ─────────────────────────────
+    if (open > 0.02) {
+      const mw = S * 0.24 * (0.6 + open*0.4 + smile*0.15);
+      const mh = open * S * 0.1;
+      const mouthY = jy + S*0.22;
+      ctx.fillStyle = '#1a1a2a';
+      ctx.beginPath();
+      ctx.ellipse(0, mouthY, mw, Math.max(2, mh), 0, 0, Math.PI*2);
+      ctx.fill();
+      ctx.strokeStyle = '#3a3a5a'; ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.ellipse(0, mouthY, mw, Math.max(2, mh), 0, 0, Math.PI*2);
+      ctx.stroke();
+    } else {
+      // Closed mouth — thin line
+      const mw = S*0.2 * (1 + smile*0.2);
+      const mouthY = jy + S*0.22;
+      const liftL = smile * S * 0.03;
+      ctx.strokeStyle = '#3a4a5a'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-mw, mouthY + liftL);
+      ctx.quadraticCurveTo(0, mouthY + open*S*0.05, mw, mouthY + liftL);
+      ctx.stroke();
+    }
+  }
+
+  _drawNose(ctx, S) {
+    // Nose is now part of jaw panel (drawn in _drawJaw)
+  }
+
+  // ── Eyebrows — dark flat bars ─────────────────
+  _drawEyebrows(ctx, S, browL, browR) {
+    [[-1, browL],[1, browR]].forEach(([side, lift]) => {
+      const bx  = side * S * 0.32;
+      const by  = -S*0.38 - lift * S*0.1;
+      const bw  = S * 0.22;
+      const bh  = S * 0.05;
+      // Slight inward tilt when frowned
+      const angle = side * (0.5 - lift) * 0.18;
+      ctx.save();
+      ctx.translate(bx, by);
+      ctx.rotate(angle);
+      ctx.fillStyle = '#2a3040';
+      ctx.strokeStyle = '#1a2030'; ctx.lineWidth = 1;
+      // Rounded bar
+      ctx.beginPath();
+      ctx.roundRect(-bw/2, -bh/2, bw, bh, bh/2);
+      ctx.fill(); ctx.stroke();
+      ctx.restore();
+    });
+  }
+
+  // ── Eyes — white sclera + blue iris ──────────
+  _drawEyes(ctx, S, eyeL, eyeR) {
+    [[-1, eyeL],[1, eyeR]].forEach(([side, open]) => {
+      const ex = side * S * 0.32;
+      const ey = -S * 0.2;
+      const ew = S * 0.2;
+      const eh = S * 0.14;
+
+      // Sclera (white oval)
+      const sg = ctx.createRadialGradient(ex - ew*0.2, ey - eh*0.2, 0, ex, ey, ew);
+      sg.addColorStop(0, '#ffffff');
+      sg.addColorStop(1, '#d0dde8');
+      ctx.fillStyle = sg;
+      ctx.strokeStyle = '#2a3040'; ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(ex, ey, ew, eh, 0, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+
+      // Eyelid close
+      const lidH = (1 - open) * eh * 2.1;
+      if (open < 0.95) {
+        // Upper lid
+        ctx.fillStyle = '#c8d8e5';
+        ctx.beginPath();
+        ctx.ellipse(ex, ey - eh + lidH*0.45, ew*0.98, lidH*0.6, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = '#2a3040'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.ellipse(ex, ey - eh*0.5 + lidH*0.25, ew, lidH*0.45, 0, Math.PI, 0, true);
+        ctx.stroke();
+      }
+
+      if (open < 0.08) return; // fully closed
+
+      // Iris — blue
+      const irisR = Math.min(ew, eh) * 0.62 * (0.3 + open*0.7);
+      const ig = ctx.createRadialGradient(ex, ey, 0, ex, ey, irisR);
+      ig.addColorStop(0,    '#1a6ab0');
+      ig.addColorStop(0.5,  '#2a8ad0');
+      ig.addColorStop(0.85, '#3aa0f0');
+      ig.addColorStop(1,    '#1a5090');
+      ctx.fillStyle = ig;
+      ctx.shadowColor = '#4ab0ff'; ctx.shadowBlur = 8 * open;
+      ctx.beginPath(); ctx.arc(ex, ey, irisR, 0, Math.PI*2); ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // Pupil
+      ctx.fillStyle = '#050810';
+      ctx.beginPath(); ctx.arc(ex, ey, irisR * 0.42, 0, Math.PI*2); ctx.fill();
+
+      // Catchlight
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.beginPath(); ctx.arc(ex + irisR*0.3, ey - irisR*0.32, irisR*0.2, 0, Math.PI*2); ctx.fill();
+
+      // Iris ring detail
+      ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(ex, ey, irisR*0.72, 0, Math.PI*2); ctx.stroke();
+    });
+  }
+
+  _drawBars(ctx, W, H, q) {
+    const labels = ['Boca','Smile','BrowL','BrowR','OjoL','OjoR','MejL','MejR','Tilt','Yaw','Nariz','Frente'];
+    const n = labels.length, barW = W/n, barH = 28;
+    ctx.font = '8px monospace'; ctx.textAlign = 'center';
+    for (let i=0; i<n; i++) {
+      const v = Math.min(1, Math.max(0, (q[i]+1)/2));
+      const x = i*barW;
+      ctx.fillStyle = 'rgba(255,255,255,0.03)';
+      ctx.fillRect(x+1, H-barH, barW-2, barH-2);
+      ctx.fillStyle = `rgba(42,138,208,${0.3+v*0.65})`;
+      ctx.fillRect(x+1, H-barH+(barH-4)*(1-v), barW-2, (barH-4)*v);
+      ctx.fillStyle = '#2a4a6a';
+      ctx.fillText(labels[i], x+barW/2, H-2);
+    }
+  }
+}
+
+const avatarRenderer = new AvatarRenderer('avatarCanvas');
+
+</script>
+<script>
+// charts.js
+/**
+ * charts.js — Real-time visualization layer
+ * - Time series: x[k], m[k], q[k] (sampled mean)
+ * - Heatmap: W_SM matrix
+ * - Error chart: ‖m* - m‖ over time
+ * - Vector bar charts for interaction tab
+ */
+
+const CHART_LEN = 100;
+
+// ── Chart.js global defaults ─────────────────────
+Chart.defaults.color = '#5a7a99';
+Chart.defaults.borderColor = '#1e3048';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 10;
+
+// ── Helper: make time-series dataset ─────────────
+function makeDataset(label, color, data = []) {
+  return {
+    label,
+    data,
+    borderColor: color,
+    backgroundColor: 'transparent',
+    borderWidth: 1.5,
+    pointRadius: 0,
+    tension: 0.3,
+  };
+}
+
+// ── Time Chart (tab: math) ────────────────────────
+let timeChart;
+function initTimeChart() {
+  const ctx = document.getElementById('timeChart').getContext('2d');
+  timeChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: Array(CHART_LEN).fill(''),
+      datasets: [
+        makeDataset('‖x‖', '#00e5ff', Array(CHART_LEN).fill(0)),
+        makeDataset('‖m‖', '#ff6b9d', Array(CHART_LEN).fill(0)),
+        makeDataset('‖q‖', '#39ff85', Array(CHART_LEN).fill(0)),
+      ]
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 8 } },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0,
+          grid: { color: '#1e3048' },
+          ticks: { maxTicksLimit: 5 }
+        }
+      }
+    }
+  });
+}
+
+// ── Error Chart ────────────────────────────────────
+let errorChart;
+function initErrorChart() {
+  const ctx = document.getElementById('errorChart').getContext('2d');
+  errorChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: Array(CHART_LEN).fill(''),
+      datasets: [
+        makeDataset('‖m* − m‖', '#ffb830', Array(CHART_LEN).fill(0))
+      ]
+    },
+    options: {
+      animation: false,
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { display: false },
+        y: {
+          min: 0,
+          grid: { color: '#1e3048' },
+          ticks: { maxTicksLimit: 5 }
+        }
+      }
+    }
+  });
+}
+
+// ── Update time chart ─────────────────────────────
+function pushToTimeSeries(x, m, q) {
+  if (!timeChart) return;
+  const norm = v => Math.sqrt(v.reduce((s, vi) => s + vi * vi, 0));
+
+  const ds = timeChart.data.datasets;
+  [ds[0].data, ds[1].data, ds[2].data].forEach((arr, i) => {
+    arr.push([norm(x), norm(m), norm(q)][i]);
+    if (arr.length > CHART_LEN) arr.shift();
+  });
+  timeChart.update('none');
+}
+
+function pushToErrorChart(errNorm) {
+  if (!errorChart) return;
+  const arr = errorChart.data.datasets[0].data;
+  arr.push(errNorm);
+  if (arr.length > CHART_LEN) arr.shift();
+  errorChart.update('none');
+}
+
+// ── Heatmap: W_SM ────────────────────────────────
+function drawHeatmap(W, rows, cols) {
+  const canvas = document.getElementById('heatmapCanvas');
+  if (!canvas) return;
+
+  const cellW = Math.max(4, Math.floor(canvas.offsetWidth / cols));
+  const cellH = Math.max(6, 12);
+  canvas.width  = cols * cellW;
+  canvas.height = rows * cellH;
+
+  const ctx = canvas.getContext('2d');
+
+  // Find range
+  let mn = Infinity, mx = -Infinity;
+  for (let v of W) { if (v < mn) mn = v; if (v > mx) mx = v; }
+  const range = Math.max(0.001, Math.max(Math.abs(mn), Math.abs(mx)));
+
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const v = W[r * cols + c] / range; // [-1, 1]
+      ctx.fillStyle = v > 0
+        ? `rgba(255,107,157,${Math.abs(v) * 0.9 + 0.1})`
+        : `rgba(0,229,255,${Math.abs(v) * 0.9 + 0.1})`;
+      ctx.fillRect(c * cellW, r * cellH, cellW - 1, cellH - 1);
+    }
+  }
+}
+
+// ── Vector bar mini-charts (interaction tab) ──────
+function drawVectorBars(canvasId, vec, color) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 200;
+  const H = 60;
+  canvas.width = W;
+  canvas.height = H;
+
+  ctx.fillStyle = '#070b12';
+  ctx.fillRect(0, 0, W, H);
+
+  const n = vec.length;
+  const barW = Math.floor(W / n) - 2;
+
+  for (let i = 0; i < n; i++) {
+    const v = Math.min(1, Math.max(0, vec[i]));
+    const bh = v * (H - 8);
+    const x = i * (barW + 2) + 2;
+
+    // Background
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    ctx.fillRect(x, 4, barW, H - 8);
+
+    // Value bar
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.85;
+    ctx.fillRect(x, H - 4 - bh, barW, bh);
+    ctx.globalAlpha = 1;
+
+    // Index label
+    ctx.fillStyle = '#2a4a66';
+    ctx.font = '8px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(i, x + barW / 2, H - 1);
+  }
+}
+
+// ── Init all charts ────────────────────────────────
+function initCharts() {
+  initTimeChart();
+  initErrorChart();
+}
+
+</script>
+<script>
+// app.js — Face Mesh controller
+
+/**
+ * app.js — Face Mesh controller
+ */
+
+let currentCameraIndex = 0;
+let availableCameras   = [];
+let cameraStream       = null;
+let faceCount          = 0;
+let currentFaceLM      = null;
+let loopId             = null;
+let faceDetector       = null;
+let frameCounter       = 0;
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelector(`[data-tab="${name}"]`).classList.add('active');
+}
+
+function setStatus(text, state) {
+  document.getElementById('statusText').textContent = text;
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot ' + (state||'');
+}
+
+async function initMediaPipe() {
+  setStatus('Cargando Face Mesh…');
+  faceDetector = new FaceMesh({
+    locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${f}`
+  });
+  faceDetector.setOptions({
+    maxNumFaces: 1,
+    refineLandmarks: true,
+    minDetectionConfidence: 0.6,
+    minTrackingConfidence: 0.6
+  });
+  faceDetector.onResults(onFaceResults);
+  await initCamera();
+}
+
+async function initCamera() {
+  setStatus('Accediendo a cámara…');
+  try {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    availableCameras = devices.filter(d => d.kind === 'videoinput');
+    const deviceId = availableCameras[currentCameraIndex]?.deviceId;
+    const constraints = {
+      video: deviceId ? { deviceId: { exact: deviceId }, width:640, height:480 } : { facingMode:'user', width:640, height:480 },
+      audio: false
+    };
+    if (cameraStream) cameraStream.getTracks().forEach(t => t.stop());
+    cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+    const video = document.getElementById('inputVideo');
+    video.srcObject = cameraStream;
+    await video.play();
+    setStatus('Buscando rostro…', 'live');
+    startLoop(video);
+  } catch(err) {
+    console.error(err);
+    setStatus('Error de cámara — modo demo', 'error');
+    startDemoMode();
+  }
+}
+
+function startLoop(video) {
+  if (loopId) cancelAnimationFrame(loopId);
+  const overlay = document.getElementById('overlayCanvas');
+  const octx    = overlay.getContext('2d');
+  async function loop() {
+    if (video.readyState >= 2) {
+      overlay.width  = video.videoWidth  || 640;
+      overlay.height = video.videoHeight || 480;
+      await faceDetector.send({ image: video });
+    }
+    drawFaceOverlay(octx, overlay.width, overlay.height);
+    updateModel();
+    loopId = requestAnimationFrame(loop);
+  }
+  loop();
+}
+
+function startDemoMode() {
+  let t = 0;
+  // Synthesize 468 fake landmarks with animated expressions
+  function demoLoop() {
+    t += 0.025;
+    const lm = [];
+    for (let i=0; i<468; i++) {
+      lm.push({ x: 0.5 + 0.01*Math.sin(t+i), y: 0.5 + 0.01*Math.cos(t*0.7+i), z: 0 });
+    }
+    // Animate key points for mouth open
+    lm[13].y = 0.55 + 0.05*Math.sin(t*2);   // mouth top
+    lm[14].y = 0.62 + 0.05*Math.sin(t*2);   // mouth bottom
+    lm[61].x = 0.4; lm[291].x = 0.6;         // mouth corners
+    // Blink every ~3s
+    const blink = Math.sin(t*0.8) > 0.97 ? 0 : 1;
+    lm[159].y = 0.35; lm[145].y = 0.35 + 0.04*blink;
+    lm[386].y = 0.35; lm[374].y = 0.35 + 0.04*blink;
+    // Eyebrows
+    lm[70].y = 0.25 + 0.03*Math.sin(t*0.5);
+    lm[300].y= 0.25 + 0.03*Math.sin(t*0.5);
+    // Interocular ref
+    lm[33].x = 0.36; lm[33].y = 0.38;
+    lm[263].x= 0.64; lm[263].y= 0.38;
+    lm[1].x  = 0.5;  lm[1].y  = 0.55;
+    lm[168].x= 0.5;  lm[168].y= 0.42;
+    currentFaceLM = lm;
+    updateModel();
+    loopId = requestAnimationFrame(demoLoop);
+  }
+  demoLoop();
+}
+
+function onFaceResults(results) {
+  if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+    currentFaceLM = results.multiFaceLandmarks[0];
+    faceCount++;
+    document.getElementById('gestureCount').textContent = faceCount;
+    setStatus('Rostro detectado ✓', 'live');
+  } else {
+    currentFaceLM = null;
+    setStatus('Buscando rostro…', 'live');
+  }
+}
+
+// Draw face mesh overlay
+function drawFaceOverlay(ctx, W, H) {
+  ctx.clearRect(0,0,W,H);
+  if (!currentFaceLM) return;
+  const lm = currentFaceLM;
+
+  // Key facial connections to draw
+  const LIPS = [61,146,91,181,84,17,314,405,321,375,291,308,324,318,402,317,14,87,178,88,95,61];
+  const EYE_L = [33,7,163,144,145,153,154,155,133,173,157,158,159,160,161,246,33];
+  const EYE_R = [362,382,381,380,374,373,390,249,263,466,388,387,386,385,384,398,362];
+  const BROW_L = [46,53,52,65,55,70,63,105,66,107];
+  const BROW_R = [276,283,282,295,285,300,293,334,296,336];
+  const FACE   = [10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109,10];
+
+  const drawPath = (pts, color, lw=1, close=false) => {
+    if (!pts.length) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth   = lw;
+    ctx.beginPath();
+    ctx.moveTo(lm[pts[0]].x*W, lm[pts[0]].y*H);
+    for (let i=1; i<pts.length; i++) ctx.lineTo(lm[pts[i]].x*W, lm[pts[i]].y*H);
+    if (close) ctx.closePath();
+    ctx.stroke();
+  };
+
+  drawPath(FACE,   'rgba(0,229,255,0.25)', 1);
+  drawPath(EYE_L,  'rgba(0,229,255,0.7)',  1.5, true);
+  drawPath(EYE_R,  'rgba(0,229,255,0.7)',  1.5, true);
+  drawPath(BROW_L, 'rgba(205,228,245,0.6)',1.5);
+  drawPath(BROW_R, 'rgba(205,228,245,0.6)',1.5);
+  drawPath(LIPS,   'rgba(255,107,157,0.8)',1.5, true);
+
+  // Nose tip
+  ctx.fillStyle = '#ff6b9d';
+  ctx.shadowColor = '#ff6b9d'; ctx.shadowBlur = 6;
+  ctx.beginPath(); ctx.arc(lm[1].x*W, lm[1].y*H, 3, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function updateModel() {
+  const result = model.step(currentFaceLM);
+  const { x, m, q, errNorm } = result;
+
+  avatarRenderer.draw(Array.from(q));
+
+  document.getElementById('errorNorm').textContent = errNorm.toFixed(3);
+
+  drawVectorBars('vecX', x, '#00e5ff');
+  drawVectorBars('vecM', m.slice(0,12), '#ff6b9d');
+  drawVectorBars('vecQ', q.map(v=>(v+1)/2), '#39ff85');
+
+  frameCounter++;
+  if (frameCounter % 3 === 0) {
+    pushToTimeSeries(x, m, q);
+    pushToErrorChart(errNorm);
+    drawHeatmap(model.W_SM, 24, 12);
+  }
+}
+
+function toggleLearning() {
+  const isOn = model.toggleLearning();
+  document.querySelectorAll('.ctrl-btn').forEach(b => {
+    if (b.textContent.includes('Aprender') || b.textContent.includes('Aprendizaje'))
+      b.classList.toggle('learning-on', isOn);
+  });
+  const chip = document.getElementById('learningChip');
+  document.getElementById('learningStatus').textContent = isOn ? 'ON' : 'OFF';
+  chip.classList.toggle('on', isOn);
+}
+
+function cycleCamera() {
+  if (availableCameras.length <= 1) return;
+  currentCameraIndex = (currentCameraIndex+1) % availableCameras.length;
+  initCamera();
+}
+
+function perturbMatrix() {
+  model.perturb(0.6);
+  setStatus('W_SM perturbada ⚡', 'live');
+  setTimeout(() => setStatus('Buscando rostro…','live'), 1500);
+}
+
+function resetModel() {
+  model.reset();
+  faceCount = 0;
+  document.getElementById('gestureCount').textContent = '0';
+  document.getElementById('errorNorm').textContent = '0.000';
+  document.getElementById('learningStatus').textContent = 'OFF';
+  document.getElementById('learningChip').classList.remove('on');
+}
+
+function updateParam(name, value) {
+  model.setParam(name, value);
+  if (name==='alpha') document.getElementById('alphaVal').textContent = parseFloat(value).toFixed(2);
+  if (name==='eta')   document.getElementById('etaVal').textContent   = parseFloat(value).toFixed(3);
+}
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName==='INPUT') return;
+  switch(e.key.toUpperCase()) {
+    case 'L': toggleLearning(); break;
+    case 'P': perturbMatrix();  break;
+    case 'R': resetModel();     break;
+    case 'C': cycleCamera();    break;
+    case 'TAB':
+      e.preventDefault();
+      const tabs = ['interaction','math'];
+      const active = document.querySelector('.tab-btn.active').dataset.tab;
+      switchTab(tabs[(tabs.indexOf(active)+1)%tabs.length]);
+      break;
+  }
+});
+
+window.addEventListener('load', () => {
+  initCharts();
+  initMediaPipe();
+});
+
+</script>
+</body>
+</html>
