@@ -26,15 +26,6 @@ Luego abra:
 http://localhost:8000
 ```
 
-## GitHub Pages
-
-1. Suba todos los archivos a la raíz del repositorio.
-2. En GitHub vaya a `Settings → Pages`.
-3. Seleccione `Deploy from a branch`.
-4. Elija la rama `main` y la carpeta `/root`.
-5. Abra la URL HTTPS publicada por GitHub Pages.
-6. Presione **Iniciar cámara** y acepte el permiso.
-
 ## Archivos
 
 ```text
