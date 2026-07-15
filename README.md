@@ -386,21 +386,6 @@ y una recuperación de las asociaciones relevantes de $W_{SM}$.
 
 Los picos de error también pueden producirse por cambios rápidos de gesto, parpadeos, pérdida del rostro o variaciones en la detección. Por ello, el aprendizaje debe evaluarse manteniendo un gesto durante varios segundos.
 
-## Secuencia sugerida para una demostración en feria
-
-1. Iniciar cámara.
-2. Calibrar rostro neutral.
-3. Mostrar imitación directa.
-4. Abrir la pestaña matemática.
-5. Explicar $x[k]$, $m[k]$ y $q[k]$.
-6. Mostrar que $W_{SM}$ comienza aproximadamente diagonal.
-7. Presionar **Perturbar W**.
-8. Mostrar el aumento del error.
-9. Activar aprendizaje.
-10. Repetir un gesto sostenido.
-11. Mostrar la reducción del error.
-12. Activar autonomía.
-13. Salir del campo visual para mostrar búsqueda y microcomportamientos.
 
 ## Controles
 
