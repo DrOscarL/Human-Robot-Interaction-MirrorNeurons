@@ -315,8 +315,7 @@ La salida combina:
 
 $$
 q_{\text{final}}
-=
-(1-\lambda)q_{\text{espejo}}
+= (1-\lambda)q_{\text{espejo}}
 +
 \lambda q_{\text{autónomo}}
 $$
