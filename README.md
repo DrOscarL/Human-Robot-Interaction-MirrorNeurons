@@ -45,32 +45,32 @@ La calibración neutral establece una referencia individual para las distancias 
 
 La aplicación implementa:
 
-\[
+$$
 z[k]=\phi\left(W_{SM}x[k]+b\right)
-\]
+$$
 
-\[
+$$
 m[k+1]=(1-\alpha)m[k]+\alpha z[k]
-\]
+$$
 
-\[
+$$
 q[k]=Km[k]
-\]
+$$
 
-\[
+$$
 \Delta W=\eta\left(m^\ast-z\right)x^\top
-\]
+$$
 
 donde:
 
-- \(x[k]\): vector de gestos faciales observados;
-- \(z[k]\): activación instantánea de la capa espejo;
-- \(m[k]\): estado dinámico de la población espejo;
-- \(q[k]\): salida aplicada al avatar;
-- \(W_{SM}\): matriz de asociación sensoriomotora;
-- \(K\): matriz de proyección motora;
-- \(\alpha\): constante dinámica;
-- \(\eta\): tasa de aprendizaje.
+- $x[k]$: vector de gestos faciales observados;
+- $z[k]$: activación instantánea de la capa espejo;
+- $m[k]$: estado dinámico de la población espejo;
+- $q[k]$: salida aplicada al avatar;
+- $W_{SM}$: matriz de asociación sensoriomotora;
+- $K$: matriz de proyección motora;
+- $\alpha$: constante dinámica;
+- $\eta$: tasa de aprendizaje.
 
 ## Experimento 1: imitación facial directa
 
@@ -93,22 +93,22 @@ Comprobar que el avatar reproduce deformaciones faciales observables sin clasifi
    - labios fruncidos.
 4. Observe:
    - las barras de activación;
-   - el vector \(x[k]\);
-   - el estado espejo \(m[k]\);
-   - la salida \(q[k]\);
+   - el vector $x[k]$;
+   - el estado espejo $m[k]$;
+   - la salida $q[k]$;
    - el movimiento correspondiente en el avatar.
 
 ### Resultado esperado
 
 Para un gesto sostenido:
 
-\[
+$$
 x_i[k] \rightarrow m_i[k] \rightarrow q_i[k]
-\]
+$$
 
-La respuesta del avatar debe seguir el gesto con un pequeño retardo, determinado por \(\alpha\).
+La respuesta del avatar debe seguir el gesto con un pequeño retardo, determinado por $\alpha$.
 
-## Experimento 2: efecto de la constante dinámica \(\alpha\)
+## Experimento 2: efecto de la constante dinámica $\alpha$
 
 ### Objetivo
 
@@ -120,17 +120,17 @@ Observar cómo cambia la velocidad de respuesta de la población espejo.
 2. Mantenga desactivado el aprendizaje.
 3. Configure un valor bajo:
 
-\[
+$$
 \alpha=0.05
-\]
+$$
 
 4. Abra y cierre la boca varias veces.
-5. Observe la respuesta lenta de \(m[k]\) y del avatar.
+5. Observe la respuesta lenta de $m[k]$ y del avatar.
 6. Configure un valor mayor:
 
-\[
+$$
 \alpha=0.35
-\]
+$$
 
 7. Repita el gesto.
 
@@ -138,19 +138,19 @@ Observar cómo cambia la velocidad de respuesta de la población espejo.
 
 Un valor pequeño produce una respuesta lenta y suave:
 
-\[
+$$
 \alpha \downarrow
 \Rightarrow
 \text{mayor suavizado}
-\]
+$$
 
 Un valor grande produce una respuesta más rápida:
 
-\[
+$$
 \alpha \uparrow
 \Rightarrow
 \text{menor retardo}
-\]
+$$
 
 Valores demasiado altos pueden producir movimientos visualmente bruscos.
 
@@ -158,7 +158,7 @@ Valores demasiado altos pueden producir movimientos visualmente bruscos.
 
 ### Objetivo
 
-Mostrar que la imitación depende de la estructura de \(W_{SM}\).
+Mostrar que la imitación depende de la estructura de $W_{SM}$.
 
 ### Procedimiento
 
@@ -181,15 +181,15 @@ Mostrar que la imitación depende de la estructura de \(W_{SM}\).
 
 Antes de perturbar:
 
-\[
+$$
 W_{SM}\approx I
-\]
+$$
 
 Después de perturbar:
 
-\[
+$$
 W_{SM}\neq I
-\]
+$$
 
 La actividad de un gesto puede propagarse hacia canales motores incorrectos.
 
@@ -211,7 +211,7 @@ Comprobar que el sistema reduce el error después de perturbar la matriz.
 8. Observe:
    - aumento de los pasos de aprendizaje;
    - reducción progresiva del error;
-   - cambio de la matriz \(W_{SM}\);
+   - cambio de la matriz $W_{SM}$;
    - modificación de la asociación diagonal;
    - recuperación gradual de la respuesta del avatar.
 
@@ -219,15 +219,15 @@ Comprobar que el sistema reduce el error después de perturbar la matriz.
 
 Durante el entrenamiento:
 
-\[
+$$
 \|m^\ast-m\|_2 \downarrow
-\]
+$$
 
 La asociación correspondiente al gesto entrenado debe fortalecerse.
 
 ### Consideración
 
-El aprendizaje es dependiente del gesto observado. Para entrenar distintas columnas de \(W_{SM}\), repita el procedimiento con:
+El aprendizaje es dependiente del gesto observado. Para entrenar distintas columnas de $W_{SM}$, repita el procedimiento con:
 
 - sonrisa;
 - apertura de boca;
@@ -235,11 +235,11 @@ El aprendizaje es dependiente del gesto observado. Para entrenar distintas colum
 - elevación de cejas;
 - labios fruncidos.
 
-## Experimento 5: efecto de la tasa de aprendizaje \(\eta\)
+## Experimento 5: efecto de la tasa de aprendizaje $\eta$
 
 ### Objetivo
 
-Observar cómo \(\eta\) modifica la velocidad de adaptación.
+Observar cómo $\eta$ modifica la velocidad de adaptación.
 
 ### Procedimiento
 
@@ -247,17 +247,17 @@ Observar cómo \(\eta\) modifica la velocidad de adaptación.
 2. Seleccione una sonrisa sostenida.
 3. Configure:
 
-\[
+$$
 \eta=0.005
-\]
+$$
 
 4. Active el aprendizaje y observe la recuperación.
 5. Reinicie y vuelva a perturbar.
 6. Configure:
 
-\[
+$$
 \eta=0.050
-\]
+$$
 
 7. Repita el entrenamiento.
 
@@ -265,19 +265,19 @@ Observar cómo \(\eta\) modifica la velocidad de adaptación.
 
 Una tasa pequeña produce aprendizaje lento:
 
-\[
+$$
 \eta \downarrow
 \Rightarrow
 \Delta W \text{ pequeño}
-\]
+$$
 
 Una tasa mayor produce aprendizaje rápido:
 
-\[
+$$
 \eta \uparrow
 \Rightarrow
 \Delta W \text{ grande}
-\]
+$$
 
 Una tasa excesivamente alta puede producir oscilaciones o asociaciones inestables.
 
@@ -295,9 +295,9 @@ Distinguir una conducta reactiva de una conducta autónoma.
 
 En este modo:
 
-\[
+$$
 q_{\text{final}}\approx q_{\text{espejo}}
-\]
+$$
 
 ### Modo autónomo
 
@@ -313,13 +313,13 @@ q_{\text{final}}\approx q_{\text{espejo}}
 
 La salida combina:
 
-\[
+$$
 q_{\text{final}}
 =
 (1-\lambda)q_{\text{espejo}}
 +
 \lambda q_{\text{autónomo}}
-\]
+$$
 
 Cuando hay un rostro, la imitación tiene mayor prioridad. Cuando no hay rostro, aumenta la influencia del comportamiento autónomo.
 
@@ -336,8 +336,8 @@ Evaluar el comportamiento del sistema cuando se pierde la detección.
 3. Salga lentamente del campo visual.
 4. Observe:
    - cambio de `Rostro detectado: SÍ` a `NO`;
-   - disminución progresiva de \(x[k]\);
-   - retorno de \(m[k]\) y \(q[k]\) hacia cero;
+   - disminución progresiva de $x[k]$;
+   - retorno de $m[k]$ y $q[k]$ hacia cero;
    - comportamiento exploratorio si la autonomía está activada.
 5. Regrese frente a la cámara.
 
@@ -349,41 +349,41 @@ El sistema debe recuperar el seguimiento sin reiniciar la aplicación.
 
 La curva roja representa:
 
-\[
+$$
 e[k]=\|m^\ast[k]-m[k]\|_2
-\]
+$$
 
 Valores menores indican una mejor correspondencia entre el gesto objetivo y el estado espejo.
 
 La curva verde representa:
 
-\[
+$$
 A_D=
 \frac{\sum_i |W_{ii}|}
 {\sum_i\sum_j |W_{ij}|}
-\]
+$$
 
 Este indicador mide cuánta magnitud de la matriz está concentrada en la diagonal.
 
 Para una asociación espejo uno a uno:
 
-\[
+$$
 A_D\rightarrow 1
-\]
+$$
 
 Después de una perturbación:
 
-\[
+$$
 A_D\downarrow
-\]
+$$
 
 Durante un entrenamiento efectivo se espera, en términos generales:
 
-\[
+$$
 e[k]\downarrow
-\]
+$$
 
-y una recuperación de las asociaciones relevantes de \(W_{SM}\).
+y una recuperación de las asociaciones relevantes de $W_{SM}$.
 
 Los picos de error también pueden producirse por cambios rápidos de gesto, parpadeos, pérdida del rostro o variaciones en la detección. Por ello, el aprendizaje debe evaluarse manteniendo un gesto durante varios segundos.
 
@@ -393,8 +393,8 @@ Los picos de error también pueden producirse por cambios rápidos de gesto, par
 2. Calibrar rostro neutral.
 3. Mostrar imitación directa.
 4. Abrir la pestaña matemática.
-5. Explicar \(x[k]\), \(m[k]\) y \(q[k]\).
-6. Mostrar que \(W_{SM}\) comienza aproximadamente diagonal.
+5. Explicar $x[k]$, $m[k]$ y $q[k]$.
+6. Mostrar que $W_{SM}$ comienza aproximadamente diagonal.
 7. Presionar **Perturbar W**.
 8. Mostrar el aumento del error.
 9. Activar aprendizaje.
@@ -409,7 +409,7 @@ Los picos de error también pueden producirse por cambios rápidos de gesto, par
 |---|---|
 | `Tab` | Cambiar entre las vistas |
 | `L` | Activar o detener aprendizaje |
-| `P` | Perturbar \(W_{SM}\) |
+| `P` | Perturbar $W_{SM}$ |
 | `R` | Reiniciar el modelo |
 | `C` | Cambiar cámara |
 | `A` | Activar o desactivar autonomía |
